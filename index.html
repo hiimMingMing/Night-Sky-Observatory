@@ -1,0 +1,2149 @@
+
+            <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Night Sky Observatory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #0a0e27 0%, #1a1f3a 30%, #2d1b69 70%, #4a148c 100%);
+            overflow: hidden;
+            height: 100vh;
+            color: white;
+            user-select: none;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Stars */
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite alternate;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .star::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            cursor: pointer;
+        }
+
+        .star:hover {
+            transform: scale(1.5);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+        }
+
+        .star.clicked {
+            animation: collect 0.5s ease-out forwards;
+        }
+
+        .star.rare {
+            background: linear-gradient(45deg, #ffd700, #ff6b6b);
+            animation: raretwinkle 2s infinite alternate;
+        }
+
+        .star.legendary {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            animation: legendarytwinkle 1.5s infinite;
+            filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.8));
+        }
+
+        .star.auto-target {
+            box-shadow: 0 0 10px #00ff00;
+            animation: autotarget 1s infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes raretwinkle {
+            0% { opacity: 0.5; transform: scale(1) rotate(0deg); }
+            100% { opacity: 1; transform: scale(1.3) rotate(180deg); }
+        }
+
+        @keyframes legendarytwinkle {
+            0% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
+            100% { transform: scale(1.5) rotate(360deg); filter: hue-rotate(360deg); }
+        }
+
+        @keyframes autotarget {
+            0%, 100% { box-shadow: 0 0 10px #00ff00; }
+            50% { box-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+        }
+
+        @keyframes collect {
+            0% { transform: scale(1); }
+            50% { transform: scale(2); box-shadow: 0 0 20px #ffd700; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Meteors */
+        .meteor {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ffd700;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .meteor:hover {
+            box-shadow: 0 0 20px #ffd700;
+            transform: scale(1.5);
+        }
+
+        .meteor.golden {
+            background: linear-gradient(45deg, #ffd700, #ff8c00);
+            box-shadow: 0 0 15px #ffd700;
+            width: 6px;
+            height: 6px;
+        }
+
+        /* Observatory */
+        .observatory {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .observatory:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .dome {
+            width: 120px;
+            height: 60px;
+            background: linear-gradient(180deg, #4a5568 0%, #2d3748 100%);
+            border-radius: 120px 120px 0 0;
+            position: relative;
+            margin: 0 auto;
+            border: 2px solid #718096;
+        }
+
+        .dome::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #e53e3e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #e53e3e;
+        }
+
+        .building {
+            width: 200px;
+            height: 120px;
+            background: linear-gradient(180deg, #4a5568 0%, #2d3748 100%);
+            border-radius: 5px 5px 0 0;
+            position: relative;
+        }
+
+        .window {
+            width: 30px;
+            height: 40px;
+            background: linear-gradient(180deg, #ffd700 0%, #ffed4e 100%);
+            position: absolute;
+            bottom: 20px;
+            border-radius: 3px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .window:nth-child(1) { left: 20px; }
+        .window:nth-child(2) { left: 60px; }
+
+        .telescope {
+            position: absolute;
+            top: -20px;
+            right: 40px;
+            width: 60px;
+            height: 8px;
+            background: linear-gradient(90deg, #4a5568, #718096);
+            border-radius: 10px;
+            transform: rotate(-30deg);
+            transform-origin: left center;
+        }
+
+        .telescope::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: -2px;
+            width: 12px;
+            height: 12px;
+            background: #2d3748;
+            border-radius: 50%;
+        }
+
+        /* UI Panels */
+        .ui-panel {
+            position: absolute;
+            background: rgba(26, 32, 44, 0.95);
+            border: 1px solid #4a5568;
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(15px);
+            z-index: 10;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .resources-panel {
+            top: 20px;
+            left: 20px;
+            min-width: 260px;
+        }
+
+        .resource-bar {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .resource-icon {
+            width: 25px;
+            height: 25px;
+            margin-right: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .upgrades-panel {
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .upgrade-category {
+            margin: 15px 0;
+        }
+
+        .upgrade-category h4 {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #4a5568;
+            padding-bottom: 4px;
+        }
+
+        .upgrade-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .upgrade-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .upgrade-item.affordable {
+            border: 1px solid #48bb78;
+            box-shadow: 0 0 8px rgba(72, 187, 120, 0.3);
+        }
+
+        .upgrade-item.legendary {
+            border: 1px solid #ff6b6b;
+            background: linear-gradient(45deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+        }
+
+        .discoveries-panel {
+            bottom: 20px;
+            left: 20px;
+            min-width: 280px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .discovery-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid #ffd700;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .discovery-item.rare {
+            background: rgba(255, 107, 107, 0.15);
+            border-color: #ff6b6b;
+        }
+
+        .discovery-item.legendary {
+            background: linear-gradient(45deg, rgba(255, 107, 107, 0.2), rgba(78, 205, 196, 0.2));
+            border: 1px solid #4ecdc4;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(78, 205, 196, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(78, 205, 196, 0.8); }
+        }
+
+        .stats-panel {
+            bottom: 20px;
+            right: 20px;
+            min-width: 200px;
+        }
+
+        .weather-panel {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .upgrade-item .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.3s;
+            min-width: 70px;
+            pointer-events: auto;
+        }
+
+        .upgrade-item .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #5a6fd8, #6a4c93);
+        }
+
+        .upgrade-item .btn:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .upgrade-item .btn.research-cost {
+            background: linear-gradient(45deg, #805ad5, #b794f6);
+        }
+
+        .upgrade-item .btn.prestige-cost {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        }
+
+        /* Research Lab Panel */
+        .research-panel {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 400px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .research-panel.active {
+            display: block;
+        }
+
+        .research-project {
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(128, 90, 213, 0.1);
+            border: 1px solid #805ad5;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .research-project:hover {
+            background: rgba(128, 90, 213, 0.2);
+        }
+
+        .research-progress {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .research-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #805ad5, #b794f6);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Achievements Panel */
+        .achievements-panel {
+            top: 50%;
+            right: 50px;
+            transform: translateY(-50%);
+            min-width: 250px;
+            max-height: 60vh;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .achievements-panel.active {
+            display: block;
+        }
+
+        .achievement {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        .achievement.completed {
+            background: rgba(72, 187, 120, 0.2);
+            border: 1px solid #48bb78;
+        }
+
+        .achievement-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .achievement.completed .achievement-icon {
+            background: linear-gradient(45deg, #48bb78, #68d391);
+        }
+
+        /* Animations */
+        .float-text {
+            position: absolute;
+            color: #ffd700;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+            z-index: 100;
+        }
+
+        .float-text.rare {
+            color: #ff6b6b;
+            font-size: 18px;
+        }
+
+        .float-text.legendary {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            20% { transform: translateY(-10px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+
+        /* Navigation */
+        .nav-bar {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(26, 32, 44, 0.9);
+            border: 1px solid #4a5568;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(102, 126, 234, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        /* Prestige effects */
+        .prestige-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.1) 0%, transparent 70%);
+            animation: prestigePulse 3s infinite;
+            z-index: 0;
+        }
+
+        @keyframes prestigePulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* Auto-clicker visual */
+        .auto-clicker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(0, 255, 0, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+            animation: autoClickerMove 2s infinite linear;
+        }
+
+        @keyframes autoClickerMove {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+            50% { transform: translate(10px, 10px) scale(1.2); opacity: 1; }
+            100% { transform: translate(20px, 20px) scale(0.8); opacity: 0.3; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .ui-panel {
+                font-size: 12px;
+                padding: 10px;
+                min-width: 200px;
+            }
+            
+            .upgrades-panel {
+                right: 10px;
+                top: 10px;
+                max-width: 250px;
+            }
+            
+            .resources-panel {
+                left: 10px;
+                top: 10px;
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Prestige effects -->
+        <div class="prestige-effect" id="prestige-effect" style="display: none;"></div>
+        
+        <!-- Stars container -->
+        <div class="stars" id="stars"></div>
+
+        <!-- Observatory -->
+        <div class="observatory" id="observatory">
+            <div class="dome"></div>
+            <div class="building">
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="telescope"></div>
+            </div>
+        </div>
+
+        <!-- Weather Panel -->
+        <div class="ui-panel weather-panel" id="weather">
+            <div style="display: flex; align-items: center;">
+                <span id="weather-icon" style="font-size: 20px; margin-right: 10px;">🌙</span>
+                <span id="weather-text">Perfect Night - Visibility: 100%</span>
+            </div>
+        </div>
+
+        <!-- Resources Panel -->
+        <div class="ui-panel resources-panel">
+            <h3 style="margin: 0 0 10px 0; color: #ffd700;">Resources</h3>
+            
+            <div class="resource-bar">
+                <div class="resource-icon" style="background: linear-gradient(45deg, #ffd700, #ffed4e);">⭐</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="starlight-bar" style="width: 0%; background: linear-gradient(90deg, #ffd700, #ffed4e);"></div>
+                </div>
+                <span id="starlight-text">0</span>
+            </div>
+            
+            <div class="resource-bar">
+                <div class="resource-icon" style="background: linear-gradient(45deg, #48bb78, #68d391);">💪</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="stamina-bar" style="width: 100%; background: linear-gradient(90deg, #48bb78, #68d391);"></div>
+                </div>
+                <span id="stamina-text">100/100</span>
+            </div>
+            
+            <div class="resource-bar">
+                <div class="resource-icon" style="background: linear-gradient(45deg, #805ad5, #b794f6);">📚</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="research-bar" style="width: 0%; background: linear-gradient(90deg, #805ad5, #b794f6);"></div>
+                </div>
+                <span id="research-text">0</span>
+            </div>
+            
+            <div class="resource-bar">
+                <div class="resource-icon" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4);">🏆</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="prestige-bar" style="width: 0%; background: linear-gradient(90deg, #ff6b6b, #4ecdc4);"></div>
+                </div>
+                <span id="prestige-text">0</span>
+            </div>
+        </div>
+
+        <!-- Upgrades Panel -->
+        <div class="ui-panel upgrades-panel">
+            <h3 style="margin: 0 0 15px 0; color: #ffd700;">Upgrades</h3>
+            <div id="upgrades-list">
+                <!-- Upgrades will be populated by JS -->
+            </div>
+        </div>
+
+        <!-- Research Panel -->
+        <div class="ui-panel research-panel" id="research-panel">
+            <h3 style="margin: 0 0 15px 0; color: #805ad5;">Research Lab</h3>
+            <div id="research-projects">
+                <!-- Research projects will be populated by JS -->
+            </div>
+            <button class="nav-btn" onclick="togglePanel('research-panel')" style="margin-top: 15px;">Close</button>
+        </div>
+
+        <!-- Achievements Panel -->
+        <div class="ui-panel achievements-panel" id="achievements-panel">
+            <h3 style="margin: 0 0 15px 0; color: #48bb78;">Achievements</h3>
+            <div id="achievements-list">
+                <!-- Achievements will be populated by JS -->
+            </div>
+            <button class="nav-btn" onclick="togglePanel('achievements-panel')" style="margin-top: 15px;">Close</button>
+        </div>
+
+        <!-- Discoveries Panel -->
+        <div class="ui-panel discoveries-panel">
+            <h3 style="margin: 0 0 10px 0; color: #ffd700;">Discoveries</h3>
+            <div id="discoveries-list">
+                <div style="opacity: 0.7; font-size: 12px;">Click on stars to make discoveries...</div>
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="ui-panel stats-panel">
+            <h3 style="margin: 0 0 10px 0; color: #ffd700;">Stats</h3>
+            <div style="font-size: 11px;">
+                <div>Stars Clicked: <span id="stars-clicked">0</span></div>
+                <div>Meteors Caught: <span id="meteors-caught">0</span></div>
+                <div>Auto Clicks: <span id="auto-clicks">0</span></div>
+                <div>Rare Stars: <span id="rare-stars">0</span></div>
+                <div>Legendary Stars: <span id="legendary-stars">0</span></div>
+                <div>Total Time: <span id="game-time">0:00</span></div>
+                <div>Visibility: <span id="visibility">100%</span></div>
+                <div>Prestige Level: <span id="prestige-level">0</span></div>
+                <div>Total Prestiges: <span id="total-prestiges">0</span></div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <div class="nav-btn active" onclick="showMainView()">Observatory</div>
+            <div class="nav-btn" onclick="togglePanel('research-panel')">Research Lab</div>
+            <div class="nav-btn" onclick="togglePanel('achievements-panel')">Achievements</div>
+            <div class="nav-btn" onclick="performPrestige()">Prestige</div>
+        </div>
+    </div>
+
+    <script>
+        // Game State - thêm nhiều variables
+        const gameState = {
+            starlight: 0,
+            stamina: 100,
+            maxStamina: 100,
+            research: 0,
+            prestige: 0,
+            starsClicked: 0,
+            meteorsCaught: 0,
+            autoClicks: 0,
+            rareStars: 0,
+            legendaryStars: 0,
+            gameTime: 0,
+            totalPrestiges: 0,
+            prestigeLevel: 0,
+            visibility: 100,
+            weather: 'clear',
+            
+            // Base values
+            baseStarReward: 1,
+            
+            // Multipliers
+            starlightMultiplier: 1,
+            staminaRegenRate: 1,
+            researchMultiplier: 1,
+            prestigeMultiplier: 1,
+            prestigeAutomationBonus: 1,
+            prestigeRareBonus: 1,
+            
+            // Chances
+            rareStarChance: 0.05,
+            legendaryStarChance: 0.01,
+            meteorChance: 0.3,
+            goldenMeteorChance: 0.1,
+            criticalChance: 0,
+            
+            // Automation
+            autoClickEnabled: false,
+            autoClickRate: 1000,
+            autoClickMultiple: 1,
+            autoTargeting: false,
+            smartTargeting: false,
+            quantumObservation: false,
+            autoMeteorCatch: false,
+            
+            // Special features
+            weatherControl: false,
+            
+            // Research flags
+            automationResearched: false,
+            quantumResearched: false,
+            aiResearched: false,
+            cosmicStringResearched: false,
+            multidimensionalResearched: false
+        };
+
+        // Enhanced Upgrades System với nhiều content hơn
+        const upgrades = [
+            // Basic Upgrades (Tier 1)
+            {
+                id: 'telescope1',
+                name: 'Better Telescope',
+                cost: 50,
+                costType: 'starlight',
+                description: 'Doubles starlight gain',
+                category: 'Basic',
+                bought: false,
+                effect: () => gameState.starlightMultiplier *= 2
+            },
+            {
+                id: 'stamina1',
+                name: 'Coffee Machine',
+                cost: 100,
+                costType: 'starlight',
+                description: 'Faster stamina regen (+1/sec)',
+                category: 'Basic',
+                bought: false,
+                effect: () => gameState.staminaRegenRate += 1
+            },
+            {
+                id: 'research1',
+                name: 'Research Journal',
+                cost: 200,
+                costType: 'starlight',
+                description: 'Doubles research gain',
+                category: 'Basic',
+                bought: false,
+                effect: () => gameState.researchMultiplier *= 2
+            },
+            {
+                id: 'staminamax1',
+                name: 'Observatory Expansion',
+                cost: 500,
+                costType: 'starlight',
+                description: '+50 Max Stamina',
+                category: 'Basic',
+                bought: false,
+                effect: () => {
+                    gameState.maxStamina += 50;
+                    gameState.stamina = gameState.maxStamina;
+                }
+            },
+            {
+                id: 'clickpower1',
+                name: 'Enhanced Optics',
+                cost: 800,
+                costType: 'starlight',
+                description: 'Stars give +2 base starlight',
+                category: 'Basic',
+                bought: false,
+                effect: () => gameState.baseStarReward += 2
+            },
+            
+            // Discovery Upgrades (Tier 2)
+            {
+                id: 'rarefinder',
+                name: 'Rare Star Detector',
+                cost: 1500,
+                costType: 'starlight',
+                description: 'Doubles chance of rare stars',
+                category: 'Discovery',
+                bought: false,
+                effect: () => gameState.rareStarChance *= 2
+            },
+            {
+                id: 'legendary1',
+                name: 'Legendary Scope',
+                cost: 100,
+                costType: 'research',
+                description: 'Unlocks legendary stars',
+                category: 'Discovery',
+                bought: false,
+                effect: () => gameState.legendaryStarChance = 0.02
+            },
+            {
+                id: 'meteordrop',
+                name: 'Meteor Magnet',
+                cost: 2500,
+                costType: 'starlight',
+                description: 'More frequent meteors',
+                category: 'Discovery',
+                bought: false,
+                effect: () => gameState.meteorChance = 0.6
+            },
+            {
+                id: 'goldenmeteor',
+                name: 'Golden Detector',
+                cost: 200,
+                costType: 'research',
+                description: 'Doubles golden meteor chance',
+                category: 'Discovery',
+                bought: false,
+                effect: () => gameState.goldenMeteorChance *= 2
+            },
+            {
+                id: 'stardensity',
+                name: 'Star Field Amplifier',
+                cost: 5000,
+                costType: 'starlight',
+                description: 'More stars on screen (+50%)',
+                category: 'Discovery',
+                bought: false,
+                effect: () => {
+                    // Add more stars
+                    for(let i = 0; i < 60; i++) {
+                        createNewStar();
+                    }
+                }
+            },
+            
+            // Automation Upgrades (Tier 3)
+            {
+                id: 'autoclick1',
+                name: 'Automated Telescope',
+                cost: 8000,
+                costType: 'starlight',
+                description: 'Automatically clicks stars every 3s',
+                category: 'Automation',
+                bought: false,
+                effect: () => {
+                    gameState.autoClickEnabled = true;
+                    gameState.autoClickRate = 3000;
+                    startAutoClicker();
+                }
+            },
+            {
+                id: 'autoclick2',
+                name: 'Faster Auto-Clicker',
+                cost: 250,
+                costType: 'research',
+                description: 'Auto-clicker works 2x faster',
+                category: 'Automation',
+                bought: false,
+                requires: ['autoclick1'],
+                effect: () => {
+                    gameState.autoClickRate = Math.max(500, gameState.autoClickRate / 2);
+                    if (gameState.autoClickEnabled) startAutoClicker();
+                }
+            },
+            {
+                id: 'autotarget',
+                name: 'Smart Targeting',
+                cost: 400,
+                costType: 'research',
+                description: 'Auto-clicker targets rare stars first',
+                category: 'Automation',
+                bought: false,
+                requires: ['autoclick1'],
+                effect: () => gameState.smartTargeting = true
+            },
+            {
+                id: 'multiclick',
+                name: 'Multi-Target System',
+                cost: 600,
+                costType: 'research',
+                description: 'Auto-clicker hits 2 stars per cycle',
+                category: 'Automation',
+                bought: false,
+                requires: ['autotarget'],
+                effect: () => gameState.autoClickMultiple = 2
+            },
+            {
+                id: 'quantum1',
+                name: 'Quantum Observation',
+                cost: 1200,
+                costType: 'research',
+                description: 'No stamina cost + hits 3 stars per cycle',
+                category: 'Automation',
+                bought: false,
+                requires: ['multiclick'],
+                effect: () => {
+                    gameState.quantumObservation = true;
+                    gameState.autoClickMultiple = 3;
+                }
+            },
+            {
+                id: 'hyperclick',
+                name: 'Hyperspeed Automation',
+                cost: 2000,
+                costType: 'research',
+                description: 'Auto-clicker works 5x faster',
+                category: 'Automation',
+                bought: false,
+                requires: ['quantum1'],
+                effect: () => {
+                    gameState.autoClickRate = Math.max(100, gameState.autoClickRate / 5);
+                    if (gameState.autoClickEnabled) startAutoClicker();
+                }
+            },
+            {
+                id: 'autometeor',
+                name: 'Meteor Auto-Catcher',
+                cost: 3000,
+                costType: 'research',
+                description: 'Automatically catches meteors',
+                category: 'Automation',
+                bought: false,
+                requires: ['quantum1'],
+                effect: () => gameState.autoMeteorCatch = true
+            },
+            
+            // Advanced Upgrades (Tier 4)
+            {
+                id: 'multiplier1',
+                name: 'Stellar Amplifier',
+                cost: 15000,
+                costType: 'starlight',
+                description: 'All starlight gains +100%',
+                category: 'Advanced',
+                bought: false,
+                effect: () => gameState.starlightMultiplier *= 2
+            },
+            {
+                id: 'stamina2',
+                name: 'Energy Drinks',
+                cost: 800,
+                costType: 'research',
+                description: '+3 stamina regen per second',
+                category: 'Advanced',
+                bought: false,
+                effect: () => gameState.staminaRegenRate += 3
+            },
+            {
+                id: 'staminamax2',
+                name: 'Mega Observatory',
+                cost: 25000,
+                costType: 'starlight',
+                description: '+200 Max Stamina',
+                category: 'Advanced',
+                bought: false,
+                requires: ['staminamax1'],
+                effect: () => {
+                    gameState.maxStamina += 200;
+                    gameState.stamina = gameState.maxStamina;
+                }
+            },
+            {
+                id: 'research2',
+                name: 'Advanced Laboratory',
+                cost: 1000,
+                costType: 'research',
+                description: 'Unlocks advanced research projects',
+                category: 'Advanced',
+                bought: false,
+                effect: () => unlockAdvancedResearch()
+            },
+            {
+                id: 'criticalclick',
+                name: 'Critical Observations',
+                cost: 1500,
+                costType: 'research',
+                description: '15% chance for 5x starlight',
+                category: 'Advanced',
+                bought: false,
+                effect: () => gameState.criticalChance = 0.15
+            },
+            {
+                id: 'weathercontrol',
+                name: 'Weather Control System',
+                cost: 50000,
+                costType: 'starlight',
+                description: 'Always perfect weather',
+                category: 'Advanced',
+                bought: false,
+                effect: () => {
+                    gameState.weatherControl = true;
+                    gameState.visibility = 100;
+                    document.getElementById('weather-icon').textContent = '🌙';
+                    document.getElementById('weather-text').textContent = 'Perfect Night - Visibility: 100%';
+                }
+            },
+            
+            // Master Upgrades (Tier 5)
+            {
+                id: 'mastertelescope',
+                name: 'Master Telescope',
+                cost: 100000,
+                costType: 'starlight',
+                description: 'All gains multiplied by 10x',
+                category: 'Master',
+                bought: false,
+                effect: () => {
+                    gameState.starlightMultiplier *= 10;
+                    gameState.researchMultiplier *= 5;
+                }
+            },
+            {
+                id: 'cosmicpower',
+                name: 'Cosmic Power Core',
+                cost: 5000,
+                costType: 'research',
+                description: 'Legendary stars appear 10x more often',
+                category: 'Master',
+                bought: false,
+                effect: () => gameState.legendaryStarChance *= 10
+            },
+            {
+                id: 'timewarp',
+                name: 'Time Warp Generator',
+                cost: 8000,
+                costType: 'research',
+                description: 'Everything happens 3x faster',
+                category: 'Master',
+                bought: false,
+                effect: () => enableTimeWarp()
+            },
+            
+            // Prestige Upgrades (Permanent)
+            {
+                id: 'prestige1',
+                name: 'Cosmic Knowledge',
+                cost: 1,
+                costType: 'prestige',
+                description: 'All gains +25% per prestige level',
+                category: 'Prestige',
+                bought: false,
+                effect: () => recalculatePrestigeBonus()
+            },
+            {
+                id: 'prestige2',
+                name: 'Stellar Memory',
+                cost: 2,
+                costType: 'prestige',
+                description: 'Start with 5000 starlight after prestige',
+                category: 'Prestige',
+                bought: false,
+                effect: () => {}
+            },
+            {
+                id: 'prestige3',
+                name: 'Time Dilation Field',
+                cost: 5,
+                costType: 'prestige',
+                description: 'Automation 2x faster permanently',
+                category: 'Prestige',
+                bought: false,
+                effect: () => gameState.prestigeAutomationBonus = 2
+            },
+            {
+                id: 'prestige4',
+                name: 'Quantum Entanglement',
+                cost: 8,
+                costType: 'prestige',
+                description: 'Start with automation unlocked',
+                category: 'Prestige',
+                bought: false,
+                effect: () => {}
+            },
+            {
+                id: 'prestige5',
+                name: 'Reality Manipulation',
+                cost: 15,
+                costType: 'prestige',
+                description: 'Rare/Legendary chances doubled permanently',
+                category: 'Prestige',
+                bought: false,
+                effect: () => {
+                    gameState.prestigeRareBonus = 2;
+                    gameState.rareStarChance *= 2;
+                    gameState.legendaryStarChance *= 2;
+                }
+            }
+        ];
+
+        // Research Projects - Nhiều content hơn
+        const researchProjects = [
+            {
+                id: 'starmap',
+                name: 'Star Mapping Project',
+                cost: 50,
+                description: 'Reveals star positions for better targeting',
+                duration: 15000, // 15 seconds
+                progress: 0,
+                completed: false,
+                unlocked: true,
+                reward: () => {
+                    gameState.autoTargeting = true;
+                    addDiscovery('📊 Star Mapping completed! Auto-targeting enabled.');
+                }
+            },
+            {
+                id: 'spectral',
+                name: 'Spectral Analysis',
+                cost: 150,
+                description: 'Increases rare star detection rate',
+                duration: 30000,
+                progress: 0,
+                completed: false,
+                unlocked: true,
+                reward: () => {
+                    gameState.rareStarChance *= 1.5;
+                    addDiscovery('🔬 Spectral Analysis complete! Rare stars more common.');
+                }
+            },
+            {
+                id: 'deepspace',
+                name: 'Deep Space Survey',
+                cost: 300,
+                description: 'Unlocks legendary celestial objects',
+                duration: 45000,
+                progress: 0,
+                completed: false,
+                unlocked: true,
+                reward: () => {
+                    gameState.legendaryStarChance *= 2;
+                    addDiscovery('🌌 Deep Space Survey complete! Legendary objects await!', 'legendary');
+                }
+            },
+            {
+                id: 'meteorology',
+                name: 'Meteor Trajectory Analysis',
+                cost: 250,
+                description: 'Better meteor prediction and catching',
+                duration: 25000,
+                progress: 0,
+                completed: false,
+                unlocked: true,
+                reward: () => {
+                    gameState.meteorChance *= 1.5;
+                    gameState.goldenMeteorChance *= 2;
+                    addDiscovery('☄️ Meteor Analysis complete! More meteors incoming!');
+                }
+            },
+            {
+                id: 'automation',
+                name: 'Automation Protocols',
+                cost: 500,
+                description: 'Develop basic automation systems',
+                duration: 60000,
+                progress: 0,
+                completed: false,
+                unlocked: false, // Unlocked by Advanced Lab
+                reward: () => {
+                    gameState.automationResearched = true;
+                    addDiscovery('🤖 Automation Protocols complete! Advanced systems unlocked!');
+                }
+            },
+            {
+                id: 'quantumphysics',
+                name: 'Quantum Physics Research',
+                cost: 800,
+                description: 'Breakthrough quantum observation techniques',
+                duration: 90000,
+                progress: 0,
+                completed: false,
+                unlocked: false,
+                reward: () => {
+                    gameState.quantumResearched = true;
+                    gameState.starlightMultiplier *= 3;
+                    addDiscovery('⚛️ Quantum Physics breakthrough! Reality bends to your will!', 'legendary');
+                }
+            },
+            {
+                id: 'artificial',
+                name: 'Artificial Intelligence',
+                cost: 1500,
+                description: 'Advanced AI automation systems',
+                duration: 120000,
+                progress: 0,
+                completed: false,
+                unlocked: false,
+                reward: () => {
+                    if (gameState.autoClickRate > 100) gameState.autoClickRate = Math.max(100, gameState.autoClickRate / 3);
+                    gameState.aiResearched = true;
+                    addDiscovery('🧠 AI Systems online! Ultimate automation achieved!', 'legendary');
+                }
+            },
+            {
+                id: 'cosmicstring',
+                name: 'Cosmic String Theory',
+                cost: 2500,
+                description: 'Understanding fundamental forces',
+                duration: 180000,
+                progress: 0,
+                completed: false,
+                unlocked: false,
+                reward: () => {
+                    gameState.prestige += 10;
+                    gameState.cosmicStringResearched = true;
+                    addDiscovery('🌌 Cosmic String Theory mastered! Prestige points gained!', 'legendary');
+                }
+            },
+            {
+                id: 'multidimensional',
+                name: 'Multidimensional Analysis',
+                cost: 5000,
+                description: 'Observe multiple realities simultaneously',
+                duration: 300000, // 5 minutes
+                progress: 0,
+                completed: false,
+                unlocked: false,
+                reward: () => {
+                    gameState.multidimensionalResearched = true;
+                    gameState.starlightMultiplier *= 10;
+                    gameState.researchMultiplier *= 10;
+                    addDiscovery('🌈 Multidimensional breakthrough! Reality multiplied!', 'legendary');
+                }
+            }
+        ];
+
+        // Achievements System
+        const achievements = [
+            {
+                id: 'first_star',
+                name: 'First Light',
+                description: 'Click your first star',
+                icon: '⭐',
+                completed: false,
+                check: () => gameState.starsClicked >= 1,
+                reward: () => gameState.starlight += 10
+            },
+            {
+                id: 'hundred_stars',
+                name: 'Star Collector',
+                description: 'Click 100 stars',
+                icon: '🌟',
+                completed: false,
+                check: () => gameState.starsClicked >= 100,
+                reward: () => gameState.starlightMultiplier *= 1.1
+            },
+            {
+                id: 'first_rare',
+                name: 'Rare Discovery',
+                description: 'Find a rare star',
+                icon: '💎',
+                completed: false,
+                check: () => gameState.rareStars >= 1,
+                reward: () => gameState.rareStarChance *= 1.2
+            },
+            {
+                id: 'first_legendary',
+                name: 'Legendary Explorer',
+                description: 'Discover a legendary star',
+                icon: '🏆',
+                completed: false,
+                check: () => gameState.legendaryStars >= 1,
+                reward: () => gameState.legendaryStarChance *= 1.5
+            },
+            {
+                id: 'automation',
+                name: 'Automated Observer',
+                description: 'Purchase automated telescope',
+                icon: '🤖',
+                completed: false,
+                check: () => upgrades.find(u => u.id === 'autoclick1').bought,
+                reward: () => gameState.autoClickRate *= 0.9
+            },
+            {
+                id: 'researcher',
+                name: 'Dedicated Researcher',
+                description: 'Complete first research project',
+                icon: '📚',
+                completed: false,
+                check: () => researchProjects.some(p => p.completed),
+                reward: () => gameState.researchMultiplier *= 1.25
+            },
+            {
+                id: 'prestige_master',
+                name: 'Cosmic Ascension',
+                description: 'Perform first prestige',
+                icon: '🌌',
+                completed: false,
+                check: () => gameState.totalPrestiges >= 1,
+                reward: () => gameState.prestigeMultiplier *= 1.1
+            }
+        ];
+
+        // Discovery messages with rarity
+        const discoveries = {
+            common: [
+                'Discovered a new star cluster!',
+                'Found a variable star!',
+                'Spotted a distant galaxy!',
+                'Identified a binary star system!',
+                'Located an exoplanet!',
+                'Found a nebula!',
+                'Discovered a pulsar!'
+            ],
+            rare: [
+                'Discovered a rare magnetar!',
+                'Found an unusual gamma-ray burst!',
+                'Spotted a rare blue supergiant!',
+                'Identified a exotic neutron star!',
+                'Located a perfect habitable world!',
+                'Found a stunning planetary nebula!'
+            ],
+            legendary: [
+                'BREAKTHROUGH: Discovered dark matter signature!',
+                'LEGENDARY: Found evidence of parallel universe!',
+                'COSMIC EVENT: Witnessed stellar collision!',
+                'ULTIMATE: Located alien megastructure!',
+                'TRANSCENDENT: Discovered new laws of physics!'
+            ]
+        };
+
+        let autoClickerInterval = null;
+        let researchInterval = null;
+
+        // Initialize game
+        function initGame() {
+            createStars();
+            setupEventListeners();
+            updateUI();
+            gameLoop();
+            
+            // Game timer
+            setInterval(() => {
+                gameState.gameTime++;
+                updateUI();
+            }, 1000);
+            
+            // Weather changes
+            setInterval(changeWeather, 45000);
+            
+            // Spawn meteors
+            setInterval(spawnMeteor, 12000);
+            
+            // Stamina regeneration
+            setInterval(() => {
+                if (gameState.stamina < gameState.maxStamina) {
+                    gameState.stamina = Math.min(gameState.maxStamina, 
+                        gameState.stamina + gameState.staminaRegenRate);
+                }
+            }, 1000);
+            
+            // Research progress
+            researchInterval = setInterval(updateResearchProgress, 100);
+            
+            // Achievement checking
+            setInterval(checkAchievements, 2000);
+        }
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 120;
+            
+            for (let i = 0; i < starCount; i++) {
+                createNewStar();
+            }
+        }
+
+        function createNewStar() {
+            const star = document.createElement('div');
+            star.className = 'star';
+            
+            // Determine star rarity
+            const rand = Math.random();
+            let rarity = 'common';
+            if (rand < gameState.legendaryStarChance) {
+                rarity = 'legendary';
+                star.classList.add('legendary');
+            } else if (rand < gameState.rareStarChance) {
+                rarity = 'rare';
+                star.classList.add('rare');
+            }
+            
+            star.dataset.rarity = rarity;
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 70 + '%';
+            
+            const size = rarity === 'legendary' ? Math.random() * 4 + 3 :
+                         rarity === 'rare' ? Math.random() * 3 + 2 :
+                         Math.random() * 2 + 1;
+            
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            
+            star.addEventListener('click', (e) => clickStar(e, star));
+            document.getElementById('stars').appendChild(star);
+            
+            return star;
+        }
+
+        function clickStar(e, star, isAutoClick = false) {
+            if (gameState.stamina <= 0 && !gameState.quantumObservation) return;
+            
+            if (!gameState.quantumObservation) {
+                gameState.stamina -= 1;
+            }
+            
+            const rarity = star.dataset.rarity || 'common';
+            const baseGain = rarity === 'legendary' ? 25 : rarity === 'rare' ? 10 : 3;
+            const starlightGain = Math.floor(
+                (Math.random() * baseGain + baseGain) * 
+                gameState.starlightMultiplier * 
+                gameState.prestigeMultiplier *
+                (gameState.visibility / 100)
+            );
+            
+            const researchGain = Math.floor(
+                (rarity === 'legendary' ? 15 : rarity === 'rare' ? 5 : 2) * 
+                gameState.researchMultiplier * 
+                gameState.prestigeMultiplier
+            );
+            
+            gainStarlight(starlightGain);
+            gameState.research += researchGain;
+            
+            // Update stats
+            if (isAutoClick) {
+                gameState.autoClicks++;
+            } else {
+                gameState.starsClicked++;
+            }
+            
+            if (rarity === 'rare') gameState.rareStars++;
+            if (rarity === 'legendary') gameState.legendaryStars++;
+            
+            // Visual effects
+            star.classList.add('clicked');
+            const textClass = rarity === 'legendary' ? 'legendary' : rarity === 'rare' ? 'rare' : '';
+            showFloatingText(e.clientX || star.offsetLeft + 10, e.clientY || star.offsetTop + 10, 
+                '+' + starlightGain + ' ⭐', textClass);
+            
+            // Discovery chance
+            const discoveryChance = rarity === 'legendary' ? 0.8 : rarity === 'rare' ? 0.3 : 0.1;
+            if (Math.random() < discoveryChance) {
+                const discoveryRarity = rarity === 'legendary' ? 'legendary' : 
+                                      rarity === 'rare' ? 'rare' : 'common';
+                const discoveryList = discoveries[discoveryRarity];
+                addDiscovery(discoveryList[Math.floor(Math.random() * discoveryList.length)], discoveryRarity);
+            }
+            
+            // Add prestige points for legendary stars
+            if (rarity === 'legendary') {
+                gameState.prestige += Math.floor(Math.random() * 3 + 1);
+            }
+            
+            setTimeout(() => {
+                star.remove();
+                createNewStar();
+            }, 500);
+        }
+
+        function startAutoClicker() {
+            if (autoClickerInterval) clearInterval(autoClickerInterval);
+            
+            autoClickerInterval = setInterval(() => {
+                if (!gameState.autoClickEnabled) return;
+                
+                const stars = document.querySelectorAll('.star:not(.clicked)');
+                if (stars.length === 0) return;
+                
+                let targetStar;
+                
+                if (gameState.smartTargeting) {
+                    // Target legendary first, then rare, then common
+                    const legendary = Array.from(stars).filter(s => s.classList.contains('legendary'));
+                    const rare = Array.from(stars).filter(s => s.classList.contains('rare'));
+                    
+                    if (legendary.length > 0) {
+                        targetStar = legendary[Math.floor(Math.random() * legendary.length)];
+                    } else if (rare.length > 0) {
+                        targetStar = rare[Math.floor(Math.random() * rare.length)];
+                    } else {
+                        targetStar = stars[Math.floor(Math.random() * stars.length)];
+                    }
+                } else {
+                    targetStar = stars[Math.floor(Math.random() * stars.length)];
+                }
+                
+                if (targetStar) {
+                    // Add targeting visual
+                    targetStar.classList.add('auto-target');
+                    
+                    // Create auto-clicker visual
+                    const autoClicker = document.createElement('div');
+                    autoClicker.className = 'auto-clicker';
+                    autoClicker.style.left = targetStar.offsetLeft + 'px';
+                    autoClicker.style.top = targetStar.offsetTop + 'px';
+                    document.querySelector('.game-container').appendChild(autoClicker);
+                    
+                    setTimeout(() => {
+                        if (autoClicker.parentNode) autoClicker.remove();
+                    }, 500);
+                    
+                    // Auto-click the star
+                    setTimeout(() => {
+                        if (!targetStar.classList.contains('clicked')) {
+                            clickStar({clientX: targetStar.offsetLeft, clientY: targetStar.offsetTop}, targetStar, true);
+                        }
+                    }, 200);
+                    
+                    // Quantum observation allows multiple simultaneous clicks
+                    if (gameState.quantumObservation && stars.length > 3) {
+                        const additionalTargets = Array.from(stars)
+                            .filter(s => s !== targetStar && !s.classList.contains('clicked'))
+                            .slice(0, 2);
+                        
+                        additionalTargets.forEach((star, index) => {
+                            setTimeout(() => {
+                                if (!star.classList.contains('clicked')) {
+                                    clickStar({clientX: star.offsetLeft, clientY: star.offsetTop}, star, true);
+                                }
+                            }, 300 + index * 100);
+                        });
+                    }
+                }
+            }, gameState.autoClickRate);
+        }
+
+        function spawnMeteor() {
+            if (Math.random() > gameState.meteorChance) return;
+            
+            const meteor = document.createElement('div');
+            meteor.className = 'meteor';
+            
+            // Golden meteors
+            if (Math.random() < gameState.goldenMeteorChance) {
+                meteor.classList.add('golden');
+            }
+            
+            meteor.style.top = Math.random() * 40 + '%';
+            meteor.style.right = '-30px';
+            
+            const speed = Math.random() * 4000 + 3000;
+            meteor.style.animation = `meteor ${speed}ms linear forwards`;
+            
+            meteor.addEventListener('click', (e) => {
+                const isGolden = meteor.classList.contains('golden');
+                const staminaCost = isGolden ? 5 : 2;
+                
+                if (gameState.stamina >= staminaCost || gameState.quantumObservation) {
+                    if (!gameState.quantumObservation) {
+                        gameState.stamina -= staminaCost;
+                    }
+                    
+                    const baseReward = isGolden ? 100 : 25;
+                    const starlightGain = Math.floor(
+                        (Math.random() * baseReward + baseReward) * 
+                        gameState.starlightMultiplier * 
+                        gameState.prestigeMultiplier
+                    );
+                    
+                    gainStarlight(starlightGain);
+                    gameState.meteorsCaught++;
+                    
+                    if (isGolden) {
+                        gameState.prestige += Math.floor(Math.random() * 5 + 3);
+                        showFloatingText(e.clientX, e.clientY, '+' + starlightGain + ' ⭐ GOLDEN!', 'legendary');
+                    } else {
+                        showFloatingText(e.clientX, e.clientY, '+' + starlightGain + ' ⭐ Meteor!');
+                    }
+                    
+                    meteor.remove();
+                    
+                    // Guaranteed discovery
+                    const discoveryRarity = isGolden ? 'legendary' : 'rare';
+                    const discoveryList = discoveries[discoveryRarity];
+                    addDiscovery('☄️ ' + discoveryList[Math.floor(Math.random() * discoveryList.length)], discoveryRarity);
+                }
+            });
+            
+            document.querySelector('.game-container').appendChild(meteor);
+            
+            setTimeout(() => {
+                if (meteor.parentNode) meteor.remove();
+            }, speed);
+        }
+
+        function gainStarlight(amount) {
+            gameState.starlight += amount;
+        }
+
+        function showFloatingText(x, y, text, cssClass = '') {
+            const floatText = document.createElement('div');
+            floatText.className = 'float-text ' + cssClass;
+            floatText.textContent = text;
+            floatText.style.left = x + 'px';
+            floatText.style.top = y + 'px';
+            
+            document.body.appendChild(floatText);
+            
+            setTimeout(() => {
+                if (floatText.parentNode) floatText.remove();
+            }, 2000);
+        }
+
+        function addDiscovery(text, rarity = 'common') {
+            const discoveriesList = document.getElementById('discoveries-list');
+            const discovery = document.createElement('div');
+            discovery.className = 'discovery-item';
+            
+            if (rarity !== 'common') {
+                discovery.classList.add(rarity);
+            }
+            
+            discovery.textContent = text;
+            discoveriesList.insertBefore(discovery, discoveriesList.firstChild);
+            
+            // Keep only last 15 discoveries
+            while (discoveriesList.children.length > 15) {
+                discoveriesList.removeChild(discoveriesList.lastChild);
+            }
+        }
+
+        function changeWeather() {
+            const weatherTypes = [
+                { type: 'clear', icon: '🌙', text: 'Perfect Night', visibility: 100 },
+                { type: 'cloudy', icon: '☁️', text: 'Partly Cloudy', visibility: 80 },
+                { type: 'overcast', icon: '🌫️', text: 'Overcast', visibility: 60 },
+                { type: 'storm', icon: '⛈️', text: 'Stormy', visibility: 40 }
+            ];
+            
+            const weather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+            gameState.weather = weather.type;
+            gameState.visibility = weather.visibility;
+            
+            document.getElementById('weather-icon').textContent = weather.icon;
+            document.getElementById('weather-text').textContent = `${weather.text} - Visibility: ${weather.visibility}%`;
+        }
+
+        function setupEventListeners() {
+            document.getElementById('observatory').addEventListener('click', () => {
+                const cost = Math.max(10, Math.floor(gameState.starlight * 0.1));
+                if (gameState.starlight >= cost) {
+                    gameState.starlight -= cost;
+                    gameState.stamina = Math.min(gameState.maxStamina, gameState.stamina + 30);
+                    showFloatingText(window.innerWidth/2, window.innerHeight - 150, '+30 Stamina');
+                    addDiscovery('Rested at the observatory and regained energy!');
+                }
+            });
+            
+            // Event delegation for upgrade buttons
+            document.getElementById('upgrades-list').addEventListener('click', function(e) {
+                if (e.target.classList.contains('upgrade-btn') || e.target.closest('.upgrade-btn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const button = e.target.classList.contains('upgrade-btn') ? e.target : e.target.closest('.upgrade-btn');
+                    const upgradeIndex = parseInt(button.dataset.upgrade);
+                    
+                    if (!button.disabled) {
+                        buyUpgrade(upgradeIndex);
+                    }
+                }
+            });
+            
+            // Research project buttons
+            document.getElementById('research-projects').addEventListener('click', function(e) {
+                if (e.target.classList.contains('research-btn')) {
+                    const projectId = e.target.dataset.project;
+                    startResearchProject(projectId);
+                }
+            });
+        }
+
+        function updateResearchProgress() {
+            researchProjects.forEach(project => {
+                if (project.progress > 0 && project.progress < project.duration && !project.completed) {
+                    project.progress += 100; // Progress in milliseconds
+                    
+                    if (project.progress >= project.duration) {
+                        project.progress = project.duration;
+                        project.completed = true;
+                        project.reward();
+                        
+                        // Unlock advanced research if needed
+                        if (project.id === 'deepspace') {
+                            researchProjects.find(p => p.id === 'artificial').unlocked = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        function startResearchProject(projectId) {
+            const project = researchProjects.find(p => p.id === projectId);
+            if (!project || project.completed || project.progress > 0) return;
+            
+            if (gameState.research >= project.cost) {
+                gameState.research -= project.cost;
+                project.progress = 1; // Start progress
+                addDiscovery(`🔬 Started research: ${project.name}`);
+            }
+        }
+
+        function checkAchievements() {
+            achievements.forEach(achievement => {
+                if (!achievement.completed && achievement.check()) {
+                    achievement.completed = true;
+                    achievement.reward();
+                    addDiscovery(`🏆 Achievement unlocked: ${achievement.name}!`, 'rare');
+                    showFloatingText(window.innerWidth/2, 200, `Achievement: ${achievement.name}!`, 'rare');
+                }
+            });
+        }
+
+        function performPrestige() {
+            const minStarlight = 10000;
+            if (gameState.starlight < minStarlight) {
+                showFloatingText(window.innerWidth/2, 300, `Need ${minStarlight} starlight to prestige!`, 'rare');
+                return;
+            }
+            
+            if (confirm('Prestige will reset most progress but grant permanent bonuses. Continue?')) {
+                // Calculate prestige points gained
+                const prestigeGained = Math.floor(gameState.starlight / 5000);
+                
+                // Reset most progress
+                const preservedUpgrades = upgrades.filter(u => u.category === 'Prestige' && u.bought);
+                
+                gameState.starlight = preservedUpgrades.some(u => u.id === 'prestige2') ? 1000 : 0;
+                gameState.research = 0;
+                gameState.stamina = gameState.maxStamina;
+                gameState.starsClicked = 0;
+                gameState.meteorsCaught = 0;
+                gameState.autoClicks = 0;
+                
+                // Reset upgrades except prestige ones
+                upgrades.forEach(upgrade => {
+                    if (upgrade.category !== 'Prestige') {
+                        upgrade.bought = false;
+                    }
+                });
+                
+                // Reset research projects
+                researchProjects.forEach(project => {
+                    project.progress = 0;
+                    project.completed = false;
+                    if (project.id !== 'starmap') project.unlocked = false;
+                });
+                
+                // Add prestige points and level
+                gameState.prestige += prestigeGained;
+                gameState.totalPrestiges++;
+                gameState.prestigeLevel++;
+                
+                // Recalculate prestige multiplier
+                if (upgrades.find(u => u.id === 'prestige1').bought) {
+                    gameState.prestigeMultiplier = 1 + (gameState.prestigeLevel * 0.25);
+                }
+                
+                // Reset multipliers (will be recalculated)
+                gameState.starlightMultiplier = 1;
+                gameState.staminaRegenRate = 1;
+                gameState.researchMultiplier = 1;
+                gameState.rareStarChance = 0.05;
+                gameState.legendaryStarChance = 0.01;
+                gameState.autoClickEnabled = false;
+                
+                // Visual effect
+                document.getElementById('prestige-effect').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('prestige-effect').style.display = 'none';
+                }, 3000);
+                
+                addDiscovery(`🌌 PRESTIGE COMPLETE! Gained ${prestigeGained} prestige points!`, 'legendary');
+                
+                // Restart auto-clicker if automation was purchased
+                if (autoClickerInterval) {
+                    clearInterval(autoClickerInterval);
+                    autoClickerInterval = null;
+                }
+            }
+        }
+
+        function unlockAdvancedResearch() {
+            researchProjects.forEach(project => {
+                if (['spectral', 'deepspace'].includes(project.id)) {
+                    project.unlocked = true;
+                }
+            });
+        }
+
+        function enableTimeDilation() {
+            // Speed up certain game intervals
+            // This would require restructuring intervals - simplified for demo
+            gameState.staminaRegenRate *= 1.5;
+        }
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const navBtns = document.querySelectorAll('.nav-btn');
+            
+            // Hide all panels first
+            document.querySelectorAll('.ui-panel.research-panel, .ui-panel.achievements-panel').forEach(p => {
+                p.classList.remove('active');
+            });
+            
+            // Reset nav buttons
+            navBtns.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected panel
+            if (panel) {
+                panel.classList.toggle('active');
+                
+                // Set active nav button
+                const activeBtn = Array.from(navBtns).find(btn => 
+                    btn.textContent.toLowerCase().includes(panelId.replace('-panel', '').replace('research', 'research lab'))
+                );
+                if (activeBtn && panel.classList.contains('active')) {
+                    activeBtn.classList.add('active');
+                }
+            }
+        }
+
+        function showMainView() {
+            document.querySelectorAll('.ui-panel.research-panel, .ui-panel.achievements-panel').forEach(p => {
+                p.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.nav-btn').classList.add('active');
+        }
+
+        // Track when upgrades need updating
+        let upgradesNeedUpdate = true;
+        
+        function updateUI() {
+            // Resources
+            document.getElementById('starlight-text').textContent = Math.floor(gameState.starlight);
+            document.getElementById('starlight-bar').style.width = Math.min(100, gameState.starlight / 100) + '%';
+            
+            document.getElementById('stamina-text').textContent = `${Math.floor(gameState.stamina)}/${gameState.maxStamina}`;
+            document.getElementById('stamina-bar').style.width = (gameState.stamina / gameState.maxStamina) * 100 + '%';
+            
+            document.getElementById('research-text').textContent = Math.floor(gameState.research);
+            document.getElementById('research-bar').style.width = Math.min(100, gameState.research / 50) + '%';
+            
+            document.getElementById('prestige-text').textContent = Math.floor(gameState.prestige);
+            document.getElementById('prestige-bar').style.width = Math.min(100, gameState.prestige / 10) + '%';
+            
+            // Stats
+            document.getElementById('stars-clicked').textContent = gameState.starsClicked;
+            document.getElementById('meteors-caught').textContent = gameState.meteorsCaught;
+            document.getElementById('auto-clicks').textContent = gameState.autoClicks;
+            document.getElementById('rare-stars').textContent = gameState.rareStars;
+            document.getElementById('legendary-stars').textContent = gameState.legendaryStars;
+            document.getElementById('visibility').textContent = gameState.visibility + '%';
+            document.getElementById('prestige-level').textContent = gameState.prestigeLevel;
+            document.getElementById('total-prestiges').textContent = gameState.totalPrestiges;
+            
+            const minutes = Math.floor(gameState.gameTime / 60);
+            const seconds = gameState.gameTime % 60;
+            document.getElementById('game-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Update UI components
+            if (upgradesNeedUpdate) {
+                updateUpgrades();
+                updateResearchPanel();
+                updateAchievementsPanel();
+                upgradesNeedUpdate = false;
+            } else {
+                updateUpgradeStates();
+            }
+        }
+
+        function updateUpgrades() {
+            const upgradesList = document.getElementById('upgrades-list');
+            upgradesList.innerHTML = '';
+            
+            const categories = [...new Set(upgrades.map(u => u.category))];
+            
+            categories.forEach(category => {
+                const categoryUpgrades = upgrades.filter(u => u.category === category && !u.bought);
+                if (categoryUpgrades.length === 0) return;
+                
+                // Category header
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'upgrade-category';
+                categoryDiv.innerHTML = `<h4>${category}</h4>`;
+                upgradesList.appendChild(categoryDiv);
+                
+                categoryUpgrades.forEach((upgrade, index) => {
+                    // Check requirements
+                    const requirementsMet = !upgrade.requires || upgrade.requires.every(req => 
+                        upgrades.find(u => u.id === req)?.bought
+                    );
+                    
+                    if (!requirementsMet) return;
+                    
+                    const upgradeDiv = document.createElement('div');
+                    upgradeDiv.className = 'upgrade-item';
+                    
+                    if (category === 'Prestige') {
+                        upgradeDiv.classList.add('legendary');
+                    }
+                    
+                    const canAfford = (upgrade.costType === 'starlight' && gameState.starlight >= upgrade.cost) ||
+                                     (upgrade.costType === 'research' && gameState.research >= upgrade.cost) ||
+                                     (upgrade.costType === 'prestige' && gameState.prestige >= upgrade.cost);
+                    
+                    if (canAfford) {
+                        upgradeDiv.classList.add('affordable');
+                    }
+                    
+                    const costIcon = upgrade.costType === 'research' ? '📚' :
+                                   upgrade.costType === 'prestige' ? '🏆' : '⭐';
+                    
+                    const buttonClass = upgrade.costType === 'research' ? 'research-cost' :
+                                       upgrade.costType === 'prestige' ? 'prestige-cost' : '';
+                    
+                    upgradeDiv.innerHTML = `
+                        <div>
+                            <div style="font-weight: bold; font-size: 13px;">${upgrade.name}</div>
+                            <div style="font-size: 11px; opacity: 0.8;">${upgrade.description}</div>
+                        </div>
+                        <button class="btn upgrade-btn ${buttonClass}" data-upgrade="${upgrades.indexOf(upgrade)}" ${canAfford ? '' : 'disabled'}>
+                            ${upgrade.cost} ${costIcon}
+                        </button>
+                    `;
+                    
+                    upgradesList.appendChild(upgradeDiv);
+                });
+            });
+        }
+        
+        function updateUpgradeStates() {
+            document.querySelectorAll('.upgrade-item').forEach(item => {
+                const button = item.querySelector('.upgrade-btn');
+                if (button) {
+                    const upgradeIndex = parseInt(button.dataset.upgrade);
+                    const upgrade = upgrades[upgradeIndex];
+                    
+                    const canAfford = (upgrade.costType === 'starlight' && gameState.starlight >= upgrade.cost) ||
+                                     (upgrade.costType === 'research' && gameState.research >= upgrade.cost) ||
+                                     (upgrade.costType === 'prestige' && gameState.prestige >= upgrade.cost);
+                    
+                    button.disabled = !canAfford;
+                    
+                    if (canAfford && !item.classList.contains('affordable')) {
+                        item.classList.add('affordable');
+                    } else if (!canAfford && item.classList.contains('affordable')) {
+                        item.classList.remove('affordable');
+                    }
+                }
+            });
+        }
+
+        function updateResearchPanel() {
+            const researchContainer = document.getElementById('research-projects');
+            researchContainer.innerHTML = '';
+            
+            researchProjects.forEach(project => {
+                if (project.unlocked === false) return;
+                
+                const projectDiv = document.createElement('div');
+                projectDiv.className = 'research-project';
+                
+                const progressPercent = project.duration > 0 ? (project.progress / project.duration) * 100 : 0;
+                const canStart = gameState.research >= project.cost && project.progress === 0 && !project.completed;
+                const isActive = project.progress > 0 && project.progress < project.duration;
+                
+                let statusText = '';
+                if (project.completed) {
+                    statusText = '✅ Completed';
+                } else if (isActive) {
+                    const remainingTime = Math.ceil((project.duration - project.progress) / 1000);
+                    statusText = `⏳ ${remainingTime}s remaining`;
+                } else {
+                    statusText = canStart ? '🚀 Ready to start' : `Need ${project.cost} 📚`;
+                }
+                
+                projectDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 14px;">${project.name}</div>
+                            <div style="font-size: 11px; opacity: 0.8;">${project.description}</div>
+                        </div>
+                        <button class="btn research-btn research-cost" data-project="${project.id}" 
+                                ${canStart ? '' : 'disabled'}>
+                            ${project.cost} 📚
+                        </button>
+                    </div>
+                    <div style="font-size: 11px; margin-bottom: 5px;">${statusText}</div>
+                    <div class="research-progress">
+                        <div class="research-progress-fill" style="width: ${progressPercent}%;"></div>
+                    </div>
+                `;
+                
+                researchContainer.appendChild(projectDiv);
+            });
+        }
+
+        function updateAchievementsPanel() {
+            const achievementsContainer = document.getElementById('achievements-list');
+            achievementsContainer.innerHTML = '';
+            
+            achievements.forEach(achievement => {
+                const achievementDiv = document.createElement('div');
+                achievementDiv.className = 'achievement';
+                
+                if (achievement.completed) {
+                    achievementDiv.classList.add('completed');
+                }
+                
+                achievementDiv.innerHTML = `
+                    <div class="achievement-icon">${achievement.icon}</div>
+                    <div>
+                        <div style="font-weight: bold; font-size: 13px;">${achievement.name}</div>
+                        <div style="font-size: 11px; opacity: 0.8;">${achievement.description}</div>
+                        ${achievement.completed ? '<div style="font-size: 10px; color: #48bb78;">✅ Completed</div>' : ''}
+                    </div>
+                `;
+                
+                achievementsContainer.appendChild(achievementDiv);
+            });
+        }
+        
+        function buyUpgrade(upgradeIndex) {
+            const upgrade = upgrades[upgradeIndex];
+            
+            if (upgrade.bought) return;
+            
+            const hasResource = (upgrade.costType === 'starlight' && gameState.starlight >= upgrade.cost) ||
+                               (upgrade.costType === 'research' && gameState.research >= upgrade.cost) ||
+                               (upgrade.costType === 'prestige' && gameState.prestige >= upgrade.cost);
+            
+            if (!hasResource) return;
+            
+            // Check requirements
+            const requirementsMet = !upgrade.requires || upgrade.requires.every(req => 
+                upgrades.find(u => u.id === req)?.bought
+            );
+            
+            if (!requirementsMet) return;
+            
+            // Deduct cost
+            if (upgrade.costType === 'starlight') {
+                gameState.starlight -= upgrade.cost;
+            } else if (upgrade.costType === 'research') {
+                gameState.research -= upgrade.cost;
+            } else if (upgrade.costType === 'prestige') {
+                gameState.prestige -= upgrade.cost;
+            }
+            
+            upgrade.bought = true;
+            upgrade.effect();
+            
+            const costIcon = upgrade.costType === 'research' ? '📚' :
+                           upgrade.costType === 'prestige' ? '🏆' : '⭐';
+            
+            addDiscovery(`🎉 Purchased ${upgrade.name}! ${upgrade.description}`, 'rare');
+            
+            // Restart auto-clicker with new settings if it was purchased
+            if (upgrade.id.includes('autoclick') && gameState.autoClickEnabled) {
+                startAutoClicker();
+            }
+            
+            // Mark that upgrades need to be rebuilt
+            upgradesNeedUpdate = true;
+            updateUI();
+        }
+
+        function gameLoop() {
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize research projects
+        researchProjects.forEach(project => {
+            if (['starmap', 'spectral', 'deepspace', 'meteorology'].includes(project.id)) {
+                project.unlocked = true;
+            }
+        });
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
